@@ -80,43 +80,58 @@
 
 // Возвращает инициализированный объект типового модуля диадока
 Функция ТиповойМодульДиадока()
-	
-	мРежимОтладки = Ложь;
-	
-	Если ТиповойМодульДиадока=неопределено Тогда
-		
-		Попытка
-			// вдруг модуль уже был подключен. А мы не можем у менеджера внешних обработок спросить, какие обработки подключены.
-			ТиповойМодульДиадока = ВнешниеОбработки.Создать("ТиповойМодульДиадока",Ложь);
-		Исключение
-			
-			Если мРежимОтладки Тогда
-				//возьмем файл с диска
-				
-				ИмяФайлаСМодулем = "c:\temp\Diadoc1C_UF_5_11_07_exports.epf";
-				ДД = Новый ДвоичныеДанные(ИмяФайлаСМодулем);
-				
-			Иначе
-				
-				//развернем файл из макета
-				ДД = ПолучитьМакет("ТиповойМодульДиадок_epf");
-				
-			КонецЕсли;
-			
-			АдресВХ = ПоместитьВоВременноеХранилище(ДД);
-			ТиповойМодульДиадока = ВнешниеОбработки.Подключить(АдресВХ,"ТиповойМодульДиадока",Ложь);
-			УдалитьИзВременногоХранилища(АдресВХ);
-			
-			ТиповойМодульДиадока = ВнешниеОбработки.Создать("ТиповойМодульДиадока",Ложь);
-			
-		КонецПопытки;
-		
-//		ТиповойМодульДиадока.ИнициализироватьМодуль(); // это в ОФ
-		ИнициализацияТиповогоМодуляУФ(ТиповойМодульДиадока); // а так будет в УФ
-	КонецЕсли;
-	
-	Возврат ТиповойМодульДиадока;
-	
+        
+		//мРежимОтладки = Ложь;
+        мРежимОтладки = Истина;
+        РежимУправляемыхФорм = Истина;
+        
+        Если ТиповойМодульДиадока=неопределено Тогда
+               
+               Попытка
+                       // вдруг модуль уже был подключен. А мы не можем у менеджера внешних обработок спросить, какие обработки подключены.
+                       ТиповойМодульДиадока = ВнешниеОбработки.Создать("ТиповойМодульДиадока",Ложь);
+               Исключение
+                       
+                       Если мРежимОтладки Тогда
+                               //возьмем файл с диска
+                               
+                               КаталогСМодулем = "C:\MySpace\Bases\Контур ДДПро. СтаффРесурс\Модуль\Измененные файлы\";
+                               ИмяФайлаСМодулем = КаталогСМодулем+"ТиповойМодульДиадокУФ.epf";
+                               ДД = Новый ДвоичныеДанные(ИмяФайлаСМодулем);
+                               
+                       Иначе
+                               
+                               //развернем файл из макета
+                               Если РежимУправляемыхФорм Тогда
+                                      ДД = ОсновнойМодуль.ПолучитьМакет("ТиповойМодульДиадокУФ_epf");                               
+                               Иначе
+                                      ДД = ОсновнойМодуль.ПолучитьМакет("ТиповойМодульДиадок_epf");
+                               КонецЕсли;
+                               
+                               ИмяФайлаСМодулем = КаталогВременныхФайлов()+"\ТиповойМодульДиадок"+?(РежимУправляемыхФорм,"УФ","")+".epf";
+                               ДД.Записать(ИмяФайлаСМодулем);
+                               
+                       КонецЕсли;                     
+                       
+                       ТиповойМодульДиадока = ВнешниеОбработки.Создать(ИмяФайлаСМодулем, Ложь);
+                       
+               КонецПопытки;
+               
+               Если РежимУправляемыхФорм Тогда
+                       ОсновнойМодуль.ИнициализацияТиповогоМодуляУФ(ТиповойМодульДиадока);
+               Иначе
+                       ОсновнойМодуль.ИнициализацияТиповогоМодуляОФ(ТиповойМодульДиадока);
+               КонецЕсли;
+               
+               Если РежимУправляемыхФорм И мРежимОтладки Тогда
+                       ТиповойМодульДиадока.ПараметрыКлиентСервер.Вставить("РежимОтладкиСервера", Истина);
+                       ТиповойМодульДиадока.ПараметрыКлиентСервер.Вставить("КаталогМодулейСервера", КаталогСМодулем);
+               КонецЕсли;
+               
+        КонецЕсли;
+        
+        Возврат ТиповойМодульДиадока;
+        
 КонецФункции
 
 Процедура ИнициализацияТиповогоМодуляУФ(ТиповойМодульДиадока)
@@ -374,17 +389,40 @@
 		Допсведения = Неопределено;
 		ФИОПодписанта = " ";
 		
-		XmlTorg12Content= ТиповойМодульДиадока().МетодСервера("Модуль_ИнтеграцияУниверсальный","ПолучитьXmlTorg12Content", Документ1С, Неопределено, Неопределено, ДопСведения, ФИОПодписанта);
+		XmlAcceptanceCertificateContent= ТиповойМодульДиадока().МетодСервера("Модуль_ИнтеграцияУниверсальный","XmlAcceptanceCertificate", Документ1С, Неопределено, Неопределено, ДопСведения, ФИОПодписанта);
+		СписокОшибок= 	ТиповойМодульДиадока().МетодСервера(,"ВалидацияXmlAcceptanceCertificateContent", XmlAcceptanceCertificateContent, Документ1С);
+		Если ЗначениеЗаполнено(СписокОшибок) тогда
+			ВызватьИсключение(СписокОшибок)
+		КонецЕсли;	 
 		
-		ОтвЛица = ОтветственныеЛицаБП.ОтветственныеЛица(Документ1С.Организация,Документ1С.Дата);
-		ЗаполнитьПодпись(XmlTorg12Content.SupplyAllowedBy,ОтвЛица.РуководительФИО,ОтвЛица.РуководительДолжностьПредставление);
+		ЗаполнитьКонтентXDTOПоСтруктуре(Результат.Content,XmlAcceptanceCertificateContent);
 		
-		//СписокОшибок=	  ТиповойМодульДиадока().МетодСервера(,"ВалидацияXmlTorg12Content", XmlTorg12Content);
-		//Если ЗначениеЗаполнено(СписокОшибок) Тогда
-		//	ВызватьИсключение(СписокОшибок);
-		//КонецЕсли; 
+		Возврат Истина;
 		
-		ЗаполнитьКонтентXDTOПоСтруктуре(Результат.Content,XmlTorg12Content);
+	ИначеЕсли ВРЕГ(ТипКонтента)=ВРЕГ("AcceptanceCertificateSellerContent") Тогда
+		
+		Допсведения = Неопределено;
+		ФИОПодписанта = " ";
+		
+		Если Документ1С.ДокументыОснования.Количество() = 0 Тогда
+			ВызватьИсключение "При формировании документа ""Акт"", в документе ""Счет-фактура выданный"" не указано ни одного основания";
+		КонецЕсли;
+		
+		РеализацияТоваровУслугСсылка = Документ1С.ДокументыОснования[0].ДокументОснование;
+		Если ТипЗнч(РеализацияТоваровУслугСсылка) <> Тип("ДокументСсылка.РеализацияТоваровУслуг") Тогда
+			ВызватьИсключение "Документ-основание в строке 1 не является документом типа ""Реализация товаров и услуг""";
+		КонецЕсли;
+		
+		XmlAcceptanceCertificateContent = ТиповойМодульДиадока().МетодСервера("Модуль_ИнтеграцияУниверсальный","ПолучитьXmlAcceptanceCertificateContent", РеализацияТоваровУслугСсылка, Неопределено, ДопСведения, ФИОПодписанта);
+		//XmlAcceptanceCertificateContent = ПолучитьXmlAcceptanceCertificateContent(Документ1С, Неопределено, ДопСведения, ФИОПодписанта);
+		//СписокОшибок= 	ТиповойМодульДиадока().МетодСервера(,"ВалидацияXmlAcceptanceCertificateContent", XmlAcceptanceCertificateContent, Документ1С);
+		//Если ЗначениеЗаполнено(СписокОшибок) тогда
+		//	ВызватьИсключение(СписокОшибок)
+		//КонецЕсли;	 
+		
+		ЗаполнитьКонтентXDTOПоСтруктуре(Результат.Content,XmlAcceptanceCertificateContent);
+		
+		Возврат Истина;
 		
 	ИначеЕсли ВРЕГ(ТипКонтента)=ВРЕГ("InvoiceContent") Тогда
 		
@@ -537,129 +575,24 @@
 		|
 		|////////////////////////////////////////////////////////////////////////////////
 		|ВЫБРАТЬ
-		|	РеализацияТоваровУслуг.Ссылка КАК Документ,
-		|	РеализацияТоваровУслуг.Номер КАК НомерДокумента,
-		|	РеализацияТоваровУслуг.Дата КАК ДатаДокумента,
-		|	РеализацияТоваровУслуг.Контрагент КАК Контрагент,
-		|	РеализацияТоваровУслуг.Организация КАК Организация,
-		|	РеализацияТоваровУслуг.СуммаДокумента КАК СуммаДокумента,
+		|	СчетФактураВыданный.Ссылка КАК Документ,
+		|	СчетФактураВыданный.Номер КАК НомерДокумента,
+		|	СчетФактураВыданный.Дата КАК ДатаДокумента,
+		|	СчетФактураВыданный.Контрагент КАК Контрагент,
+		|	СчетФактураВыданный.Организация КАК Организация,
+		|	СчетФактураВыданный.СуммаДокумента КАК СуммаДокумента,
 		|	Диадок_ПакетыДокументов.Ссылка КАК Пакет
 		|ИЗ
-		|	Документ.РеализацияТоваровУслуг КАК РеализацияТоваровУслуг
+		|	Документ.СчетФактураВыданный КАК СчетФактураВыданный
 		|		ВНУТРЕННЕЕ СОЕДИНЕНИЕ КэшКонтрагентов КАК КэшКонтрагентов
-		|		ПО (КэшКонтрагентов.Контрагент1С = РеализацияТоваровУслуг.Контрагент)
-		|			И (КэшКонтрагентов.Организация1С = РеализацияТоваровУслуг.Организация)
+		|		ПО (КэшКонтрагентов.Контрагент1С = СчетФактураВыданный.Контрагент)
+		|			И (КэшКонтрагентов.Организация1С = СчетФактураВыданный.Организация)
 		|		ЛЕВОЕ СОЕДИНЕНИЕ Справочник.Диадок_ПакетыДокументов КАК Диадок_ПакетыДокументов
-		|		ПО РеализацияТоваровУслуг.Ссылка = Диадок_ПакетыДокументов.Документ
+		|		ПО СчетФактураВыданный.Ссылка = Диадок_ПакетыДокументов.Документ
 		|ГДЕ
-		|	РеализацияТоваровУслуг.Дата МЕЖДУ &НачалоПериода И &КонецПериода
-		|	И РеализацияТоваровУслуг.Проведен
+		|	СчетФактураВыданный.Дата МЕЖДУ &НачалоПериода И &КонецПериода
+		|	И СчетФактураВыданный.Проведен
 		|	И Диадок_ПакетыДокументов.Ссылка ЕСТЬ NULL";
-		
-	ИначеЕсли ВидПакетаРазвернутый.ID = "ID_АктСверки" Тогда
-		
-		Возврат 
-		"ВЫБРАТЬ
-		|	Диадок_НастройкиКонтрагентов.Организация.СвязанныйСправочник1 КАК Организация1С,
-		|	Диадок_НастройкиКонтрагентов.Контрагент.СвязанныйСправочник1 КАК Контрагент1С,
-		|	Диадок_НастройкиКонтрагентов.Организация КАК Организация,
-		|	Диадок_НастройкиКонтрагентов.Контрагент КАК Контрагент,
-		|	Диадок_НастройкиКонтрагентов.Организация.ID,
-		|	Диадок_НастройкиКонтрагентов.Контрагент.ID,
-		|	Диадок_НастройкиКонтрагентов.Организация.ID_ОсновноеПодразделение КАК ПодразделениеОрганизацииID,
-		|	Диадок_НастройкиКонтрагентов.Контрагент.ID_ОсновноеПодразделение КАК ПодразделениеКонтрагентаID
-		|ПОМЕСТИТЬ КэшКонтрагентов4
-		|ИЗ
-		|	РегистрСведений.Диадок_НастройкиКонтрагентов КАК Диадок_НастройкиКонтрагентов
-		|ГДЕ
-		|	Диадок_НастройкиКонтрагентов.ИмяСвойства = ""Статус""
-		|	И Диадок_НастройкиКонтрагентов.Значение = ""IsMyCounteragent""
-		|
-		|ИНДЕКСИРОВАТЬ ПО
-		|	Организация,
-		|	Контрагент
-		|;
-		|
-		|////////////////////////////////////////////////////////////////////////////////
-		|ВЫБРАТЬ
-		|	АктСверкиВзаиморасчетов.Ссылка КАК Документ,
-		|	АктСверкиВзаиморасчетов.Номер КАК НомерДокумента,
-		|	АктСверкиВзаиморасчетов.Дата КАК ДатаДокумента,
-		|	АктСверкиВзаиморасчетов.Контрагент КАК Контрагент,
-		|	АктСверкиВзаиморасчетов.Организация КАК Организация,
-		|	АктСверкиВзаиморасчетов.Расхождение КАК СуммаДокумента,
-		|	Диадок_ПакетыДокументов.Ссылка КАК Пакет
-		|ИЗ
-		|	Документ.АктСверкиВзаиморасчетов КАК АктСверкиВзаиморасчетов
-		|		ВНУТРЕННЕЕ СОЕДИНЕНИЕ КэшКонтрагентов4 КАК КэшКонтрагентов
-		|		ПО (КэшКонтрагентов.Контрагент1С = АктСверкиВзаиморасчетов.Контрагент)
-		|			И (КэшКонтрагентов.Организация1С = АктСверкиВзаиморасчетов.Организация)
-		|		ЛЕВОЕ СОЕДИНЕНИЕ Справочник.Диадок_ПакетыДокументов КАК Диадок_ПакетыДокументов
-		|		ПО АктСверкиВзаиморасчетов.Ссылка = Диадок_ПакетыДокументов.Документ
-		|ГДЕ
-		|	АктСверкиВзаиморасчетов.Дата МЕЖДУ &НачалоПериода И &КонецПериода
-		|	И НЕ АктСверкиВзаиморасчетов.ПометкаУдаления
-		|	И Диадок_ПакетыДокументов.Ссылка ЕСТЬ NULL";
-		
-	ИначеЕсли ВидПакетаРазвернутый.ID = "ID_Рассылка" Тогда
-		
-		Возврат 
-		"ВЫБРАТЬ
-		|	Диадок_НастройкиКонтрагентов.Организация.СвязанныйСправочник1 КАК Организация1С,
-		|	Диадок_НастройкиКонтрагентов.Контрагент.СвязанныйСправочник1 КАК Контрагент1С,
-		|	Диадок_НастройкиКонтрагентов.Организация КАК Организация,
-		|	Диадок_НастройкиКонтрагентов.Контрагент КАК Контрагент,
-		|	Диадок_НастройкиКонтрагентов.Организация.ID,
-		|	Диадок_НастройкиКонтрагентов.Контрагент.ID,
-		|	Диадок_НастройкиКонтрагентов.Организация.ID_ОсновноеПодразделение КАК ПодразделениеОрганизацииID,
-		|	Диадок_НастройкиКонтрагентов.Контрагент.ID_ОсновноеПодразделение КАК ПодразделениеКонтрагентаID
-		|ПОМЕСТИТЬ КэшКонтрагентов2
-		|ИЗ
-		|	РегистрСведений.Диадок_НастройкиКонтрагентов КАК Диадок_НастройкиКонтрагентов
-		|ГДЕ
-		|	Диадок_НастройкиКонтрагентов.ИмяСвойства = ""Статус""
-		|	И Диадок_НастройкиКонтрагентов.Значение = ""IsMyCounteragent""
-		|	И НЕ Диадок_НастройкиКонтрагентов.Организация.СвязанныйСправочник1 = НЕОПРЕДЕЛЕНО
-		|	И НЕ Диадок_НастройкиКонтрагентов.Контрагент.СвязанныйСправочник1 = НЕОПРЕДЕЛЕНО
-		|
-		|ИНДЕКСИРОВАТЬ ПО
-		|	Организация,
-		|	Контрагент
-		|;
-		|
-		|////////////////////////////////////////////////////////////////////////////////
-		|ВЫБРАТЬ
-		|	Файлы.Ссылка КАК Документ,
-		|	Файлы.Наименование КАК НомерДокумента,
-		|	Файлы.ДатаСоздания КАК ДатаДокумента,
-		|	КэшКонтрагентов.Контрагент1С КАК Контрагент,
-		|	КэшКонтрагентов.Организация1С КАК Организация,
-		|	0 КАК СуммаДокумента
-		|ПОМЕСТИТЬ ВТДекартоваНаОтправку
-		|ИЗ
-		|	Справочник.Файлы КАК Файлы,
-		|	КэшКонтрагентов2 КАК КэшКонтрагентов
-		|ГДЕ
-		|	Файлы.ДатаСоздания МЕЖДУ &НачалоПериода И &КонецПериода
-		|;
-		|
-		|////////////////////////////////////////////////////////////////////////////////
-		|ВЫБРАТЬ
-		|	ВТДекартоваНаОтправку.Документ КАК Документ,
-		|	ВТДекартоваНаОтправку.НомерДокумента КАК НомерДокумента,
-		|	ВТДекартоваНаОтправку.ДатаДокумента КАК ДатаДокумента,
-		|	ВТДекартоваНаОтправку.Контрагент КАК Контрагент,
-		|	ВТДекартоваНаОтправку.Организация КАК Организация,
-		|	ВТДекартоваНаОтправку.СуммаДокумента КАК СуммаДокумента,
-		|	Диадок_ПакетыДокументов.Ссылка КАК Пакет
-		|ИЗ
-		|	ВТДекартоваНаОтправку КАК ВТДекартоваНаОтправку
-		|		ЛЕВОЕ СОЕДИНЕНИЕ Справочник.Диадок_ПакетыДокументов КАК Диадок_ПакетыДокументов
-		|		ПО ВТДекартоваНаОтправку.Документ = Диадок_ПакетыДокументов.Документ
-		|			И ВТДекартоваНаОтправку.Контрагент = Диадок_ПакетыДокументов.Контрагент
-		|			И ВТДекартоваНаОтправку.Организация = Диадок_ПакетыДокументов.Организация
-		|ГДЕ
-		|	Диадок_ПакетыДокументов.Ссылка ЕСТЬ NULL";
 		
 	Иначе
 		
@@ -672,25 +605,9 @@
 
 Функция ПодготовитьПакет(ВидПакетаРазвернутый, СтрокаСписка, Пакет)
 	
-	Если ВидПакетаРазвернутый.Наименование = "Основной пакет" Тогда
+	Если ВидПакетаРазвернутый.ID = "ID_ОсновнойПакет" Тогда
 		
-		СчетФактура = УчетНДСПереопределяемый.НайтиПодчиненныйСчетФактуруВыданныйНаРеализацию(СтрокаСписка.Документ);
-		Если Не ЗначениеЗаполнено(СчетФактура) Тогда
-			ВызватьИсключение "Отсутствует счет-фактура по документу " + СтрокаСписка.Документ;
-		КонецЕсли;
-
-		ОсновнойМодуль.ЭДО_ДокументМенеджер_ПодготовитьИДобавитьДокументВПакет(Пакет,	СчетФактура,			"СчетФактура");
-		ОсновнойМодуль.ЭДО_ДокументМенеджер_ПодготовитьИДобавитьДокументВПакет(Пакет,	СтрокаСписка.Документ,	"ТОРГ12");
-		//ОсновнойМодуль.ЭДО_ДокументМенеджер_ПодготовитьИДобавитьДокументВПакет(Пакет,	СтрокаСписка.Документ,	"Транзакционный отчет");
-		
-	ИначеЕсли ВидПакетаРазвернутый.Наименование = "АктСверки" Тогда
-		
-		ОсновнойМодуль.ЭДО_ДокументМенеджер_ПодготовитьИДобавитьДокументВПакет(Пакет,	СтрокаСписка.Документ,	"АктСверки");
-
-	ИначеЕсли ВидПакетаРазвернутый.Наименование = "Рассылка" Тогда
-		
-		
-		ОсновнойМодуль.ЭДО_ДокументМенеджер_ПодготовитьИДобавитьДокументВПакет(Пакет,	СтрокаСписка.Документ,	"Рассылка_PDF");
+		ОсновнойМодуль.ЭДО_ДокументМенеджер_ПодготовитьИДобавитьДокументВПакет(Пакет,	СтрокаСписка.Документ, "ID_Акт");
 		
 	Иначе
 		
@@ -707,9 +624,7 @@
 	ТЗ.Колонки.Добавить("ID");
 	ТЗ.Колонки.Добавить("Наименование");
 	
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_ОсновнойПакет",	"Основной пакет");
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_АктСверки", 		"Акт сверки");
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_Рассылка", 		"Рассылка");
+	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_ОсновнойПакет",	"Акт+СФ+Счет");
 	
 	Возврат ТЗ;
 	
@@ -723,10 +638,9 @@
 	ТЗ.Колонки.Добавить("Наименование");
 	ТЗ.Колонки.Добавить("ТипДокумента");
 	
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_СчетФактура","Счет-фактура", "Invoice");
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_ТОРГ12", 	"ТОРГ-12", 		"XmlTorg12");
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_АктСверки", 	"Акт сверки", 	"ReconciliationAct");
-	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_Рассылка", 	"Рассылка", 	"Nonformalized");
+	ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_Акт", 	"Акт", 		"XmlAcceptanceCertificate");
+	//ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_СчетФактура","Счет-фактура", "Invoice");
+	//ДобавитьСтрокуВТаблицуЗначений(ТЗ, "ID_Счет", 	"Счет", 	"ProformaInvoiceContent");
 
 	Возврат ТЗ;
 	
@@ -734,6 +648,481 @@
 
 //} СОБЫТИЯ ПОДКЛЮЧАЕМОГО МОДУЛЯ
 
+//{ Методы формирования контента, взятые из типового модуля
+////////////////////////////////////////////////////////////////////////////////
+	//{ Get content
+
+		////////////////////////////////////////////////////////////////////////////////
+		//{ ИНИЦАЛИЗАЦИЯ content
+		
+		// описанные функции вызываются на сервере из интеграционных модулей,
+		// должны совпадать с описанием функций инициализации контентов на клиенте (форма "Модуль_Клиент")
+
+		//{ документ
+
+			Функция Новый_Torg12SellerContent() Экспорт
+				
+				Content = Новый Структура("Date, Number, WaybillDate, WaybillNumber, OperationCode, 
+										  |GroundName, GroundDate,	GroundNumber, Seller, Buyer, 
+										  |Shipper, Consignee, ShipperDepartment, ShipperOkdp, SupplyDate, 
+										  |AttachmentSheetsQuantity, ChiefAccountant, AdditionalInfo, 
+										  |SupplyAllowedBy, ChiefAccountant, SupplyPerformedBy, Commons, Totals, Items");
+										  
+				Content.Seller 		= Новый_OrganizationInfo();
+				Content.Buyer 		= Новый_OrganizationInfo();
+				Content.Shipper 	= Новый_OrganizationInfo();
+				Content.Consignee 	= Новый_OrganizationInfo();
+				Content.SupplyAllowedBy	  = Новый_Official();
+				Content.ChiefAccountant	  = Новый_Official();
+				Content.SupplyPerformedBy = Новый_Official();
+				Content.Commons     = Новый_Torg12Commons();
+				Content.Totals      = Новый_Torg12Totals();
+				
+				Content.items 		= Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции	
+			
+			Функция Новый_Torg12BuyerContent() Экспорт
+				
+				Content = Новый Структура("Accepter, Attorney, Receiver, ShipmentReceiptDate, AdditionalInfo"); 
+				Content.Accepter = Новый_Official();
+				Content.Receiver = Новый_Official();
+				Content.Attorney = Новый_Attorney();
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_AcceptanceCertificateSellerContent() Экспорт
+				
+				Content = Новый Структура("Date, Number, Title, SignatureDate, Official, Attorney,  
+										  |Seller, Items, AdditionalInfo, SignatureDate");
+										  
+				Content.Seller   = Новый_OrganizationInfo();
+				Content.Official = Новый_Official();
+				Content.Attorney = Новый_Attorney();
+				Content.items    = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции	
+			
+			Функция Новый_AcceptanceCertificateBuyerContent() Экспорт
+				
+				Content = Новый Структура("Signer, Attorney, Complaints, SignatureDate, AdditionalInfo"); 
+				Content.Signer   = Новый_Official();
+				Content.Attorney = Новый_Attorney();
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceContent() Экспорт
+				
+				Content = Новый Структура("Date, Number, InvoiceRevisionDate, InvoiceRevisionNumber, 
+										  |Currency, ВалютаСсылка, PaymentDocuments, Seller, Shipper, 
+										  |Consignee, Buyer, Signer, Totals, Items, StructedAdditionalInfos");
+				
+				Content.Seller 	  = Новый_OrganizationInfo();
+				Content.Buyer     = Новый_OrganizationInfo();
+				Content.Consignee = Новый_ShipperOrConsigneeInfo();
+				Content.Shipper   = Новый_ShipperOrConsigneeInfo();
+				Content.Totals    = Новый_InvoiceTotals();
+				Content.Signer    = Новый_Signer();
+
+				Content.items 	  				= Новый Массив;
+				Content.StructedAdditionalInfos = Новый Массив;
+				Content.PaymentDocuments 		= Новый Массив;
+				
+				Возврат content;
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceCorrectionContent() Экспорт
+				
+				Content = Новый Структура("InvoiceCorrectionDate, InvoiceCorrectionNumber,  
+										  |InvoiceCorrectionRevisionDate, InvoiceCorrectionRevisionNumber, 
+										  |Currency, ВалютаСсылка, Seller, Buyer, Signer, Items, TotalsDec, 
+										  |TotalsInc, OriginalInvoices, StructedAdditionalInfos");
+										  
+				Content.Seller    = Новый_OrganizationInfo();
+				Content.Buyer     = Новый_OrganizationInfo();
+				Content.Signer    = Новый_Signer();
+				Content.TotalsDec = Новый_InvoiceTotalsDiff();
+				Content.TotalsInc = Новый_InvoiceTotalsDiff();
+				
+				Content.items 	  				= Новый Массив;
+				Content.OriginalInvoices		= Новый Массив;
+				Content.StructedAdditionalInfos = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_UtdSellerContent() Экспорт
+				
+				Content = Новый Структура("Function, СчетФактураСсылка, Name, Date, Number,
+										  |Seller, Buyer, Shipper, Consignee, InvoiceTable,
+										  |Currency, ВалютаСсылка, CurrencyRate,
+										  |RevisionDate, RevisionNumber, AdditionalInfoId,
+										  |TransferInfo, Creator, CreatorBase, GovermentContractInfo,
+										  |Signers, PaymentDocuments");
+										  
+				Content.Seller 			 = Новый_ExtendedOrganizationInfo();
+				Content.Buyer 			 = Новый_ExtendedOrganizationInfo();
+				Content.Consignee	 	 = Новый_ExtendedOrganizationInfo();
+				Content.Shipper		 	 = Новый_Shipper();
+				Content.TransferInfo 	 = Новый_TransferInfo();
+				Content.InvoiceTable 	 = Новый_InvoiceTable();
+				Content.AdditionalInfoId = Новый_AdditionalInfoId();
+				
+				Content.Signers          = Новый Массив;
+				Content.PaymentDocuments = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции	
+			
+			Функция Новый_UtdBuyerContent() Экспорт
+				
+				Content = Новый Структура("Creator, CreatorBase, OperationCode, OperationContent, 
+										  |AcceptanceDate, Employee, OtherIssuer, AdditionalInfoId, Signers");
+				
+				Content.Employee   		 = Новый_Employee();
+				Content.OtherIssuer		 = Новый_OtherIssuer();
+				Content.AdditionalInfoId = Новый_AdditionalInfoId();
+				
+				Content.Signers    		 = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции
+	
+		//} документ
+
+		//{ шапка
+	
+			Функция Новый_OrganizationInfo() 
+				
+				Content = Новый Структура("IsSoleProprietor, Name, Inn, Kpp,  Address, BankAccountNumber, 
+										  |BankName, BankId, Phone, Fax, Okopf, Okpo");
+				
+				Content.Address = Новый_AddressInfo();
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_ExtendedOrganizationInfo() 
+				
+				Content = Новый Структура("BoxId, Name, Inn, Kpp,  Address, FnsParticipantId, Type,
+										  |Okopf, Okpo, Okdp, Phone, Email, CorrespondentAccount,
+										  |BankAccountNumber, BankName, BankId,  Department, AdditionalInfo,
+										  |OrganizationOrPersonInfo, IndividualEntityRegistrationCertificate");
+				
+				Content.Address = Новый_AddressInfo();
+				
+				Content.Вставить("Ссылка");
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_Shipper()
+				
+				Content = Новый Структура("OrganizationInfo, SameAsSeller");
+				
+				Content.OrganizationInfo = Новый_ExtendedOrganizationInfo();
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_ShipperOrConsigneeInfo()
+				
+				Content = Новый Структура("IsSoleProprietor, Name, Address, SameAsSellerOrBuyer");
+				
+				Content.Address = Новый_AddressInfo();
+				
+				Content.Вставить("Ссылка");
+				
+				Возврат Content;
+				
+			КонецФункции
+
+			Функция Новый_AddressInfo()
+				
+				Возврат Новый Структура("IsForeign, ZipCode, RegionCode, Territory, City, Locality, 
+										|Street, Building, Block, Apartment, CountryCode, AddressText, 
+										|AddressCode, AddressString");
+
+			КонецФункции	
+			
+			Функция Новый_AdditionalInfoId()
+				
+				Content = Новый Структура("InfoFileId, StructedAdditionalInfos");
+				
+				Content.StructedAdditionalInfos = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_StructedAdditionalInfo() Экспорт
+				
+				Возврат Новый Структура("Key, Value");
+				
+			КонецФункции
+	
+		//} шапка
+
+		//{ ТЧ
+	
+			Функция Новый_Torg12Item() Экспорт
+				
+				Возврат Новый Структура("Product, UnitCode, Quantity, Price, TaxRate, TotalWithVatExcluded, 
+										|Vat, Total, Feature, Sort, Article, ProductCode, UnitName, ParcelType, 
+										|ParcelCapacity, ParcelsQuantity, GrossQuantity, AdditionalInfo, СсылкаНаЕИ"); 
+				
+			КонецФункции
+
+			Функция Новый_AcceptanceCertificateItem() Экспорт
+				
+				Возврат Новый Структура("Name, Description, UnitCode, UnitName, Quantity, Price, TotalWithVatExcluded, Vat, Total, AdditionalInfo, СсылкаНаЕИ"); 
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceItem() Экспорт
+				
+				Content = Новый Структура("Product, UnitCode, ЕдиницаИзмеренияСсылка, 
+										  |Quantity, Price, CountriesOfOrigin, СтранаПроисхожденияСсылка, 
+										  |CustomsDeclarationNumbers, Excise, TaxRate, TotalWithVatExcluded, 
+										  |Vat, Total, СсылкаНаЕИ, StructedAdditionalInfos"); 
+										  
+				Content.StructedAdditionalInfos = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceCorrectionItem() Экспорт
+				
+				Content = Новый Структура("Product, AmountsDec, AmountsInc, OriginalValues, CorrectedValues, StructedAdditionalInfos"); 
+				Content.StructedAdditionalInfos = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceTable()
+				
+				Content = Новый Структура("TotalWithVatExcluded, Vat, Total, TotalNet, Items");
+				
+				Content.Items = Новый Массив;
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_ExtendedInvoiceItem() Экспорт
+				
+				Content = Новый Структура("Product, UnitCode, UnitName, Quantity, Price, Excise, 
+										  |TaxRate, SubtotalWithVatExcluded, Vat, Subtotal, ItemMark, 
+										  |AdditionalProperty, VendorCode, ToRelease, AccountDebit, 
+										  |AccountCredit, CustomDeclarations, StructedAdditionalInfos");
+				
+				Content.CustomDeclarations = Новый Массив;
+				Content.StructedAdditionalInfos = Новый Массив;
+				
+				Content.Вставить("ЕдиницаИзмеренияСсылка");
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_OriginalInvoice() Экспорт
+				
+				Возврат Новый Структура("Date, Number, InvoiceRevisionDate, InvoiceRevisionNumber"); 
+				
+			КонецФункции
+			
+			Функция Новый_PaymentDocument() Экспорт
+				
+				Возврат Новый Структура("Date, Number");
+				
+			КонецФункции
+			
+			Функция Новый_CustomDeclaration() Экспорт
+				
+				Возврат Новый Структура("CountryCode, DeclarationNumber, СтранаПроисхожденияСсылка");
+				
+			КонецФункции
+			
+			Функция Новый_TransferInfo()
+				
+			 	Content = Новый Структура("OperationInfo, OperationType, TransferDate, TransferTextInfo,
+										  |Carrier, Employee, OtherIssuer, CreatedThingTransferDate,
+										  |CreatedThingInfo, AdditionalInfoId, TransferBases, Waybills");
+				
+				Content.TransferBases    = Новый Массив;
+				Content.Waybills         = Новый Массив;
+				Content.Carrier			 = Новый_ExtendedOrganizationInfo();
+				Content.Employee		 = Новый_Employee();
+				Content.OtherIssuer		 = Новый_OtherIssuer();
+				Content.AdditionalInfoId = Новый_AdditionalInfoId();
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_TransferBase() Экспорт
+				
+				Возврат Новый Структура("DocumentName, DocumentNumber, DocumentDate, DocumentInfo"); 
+				
+			КонецФункции
+			
+			Функция Новый_Waybill() Экспорт
+				
+				Возврат Новый Структура("DocumentNumber, DocumentDate"); 
+				
+			КонецФункции
+	
+		//} ТЧ
+
+		//{ ответственные, подписи
+	
+			Функция Новый_Signer() Экспорт
+				
+				Возврат Новый Структура("Surname, FirstName, Patronymic, INN, IsSoleProprietor, 
+										|SoleProprietorRegistrationCertificate, JobTitle");
+				
+			КонецФункции
+			
+			Функция Новый_ExtendedSigners() Экспорт
+				
+				Content = Новый Структура("BoxId, CertificateThumbprint, SignerDetails"); 
+				Content.SignerDetails = Новый Структура("Surname, FirstName, Patronymic, JobTitle, inn, RegistrationCertificate, SignerType, OrganizationName, SignerInfo, Powers, Status, PowersBase, OrganizationPowersBase");
+				
+				Возврат Content;
+				
+			КонецФункции
+			
+			Функция Новый_ExtendedSignerDetails() Экспорт
+				
+				Возврат Новый Структура("Surname, FirstName, Patronymic, JobTitle, inn, RegistrationCertificate, SignerType, 
+										|OrganizationName, SignerInfo, Powers, Status, PowersBase, OrganizationPowersBase"); 
+				
+			КонецФункции
+			
+			Функция Новый_Signature() Экспорт
+				
+				Content = Новый Структура("Certificate, SignDate, SignatureAuthenticityDate");
+				
+				Content.Certificate = Новый_PersonalCertificate();
+				
+				Возврат Content;
+				
+			КонецФункции
+				
+			Функция Новый_PersonalCertificate() Экспорт
+				
+				Возврат Новый Структура("BeginDate, EndDate, Inn, IsKontur, IsQualifiedElectronicSignature, IssuerName, Kpp, Name, OrganizationName, SerialNumber, Thumbprint");
+				
+			КонецФункции
+			
+			Функция Новый_ExtendedSignerDetailsToPost() Экспорт
+				
+				Возврат Новый Структура("JobTitle, RegistrationCertificate, SignerType, SignerInfo, Powers, Status, PowersBase, OrganizationPowersBase"); 
+				
+			КонецФункции
+			
+			Функция Новый_Official()
+				
+				Возврат Новый Структура("JobTitle, Surname, FirstName, Patronymic");
+				
+			КонецФункции
+			
+			Функция Новый_Employee()
+				
+				Возврат Новый Структура("EmployeePosition, EmployeeInfo, EmployeeBase, Surname, FirstName, Patronymic");
+				
+			КонецФункции
+			
+			Функция Новый_OtherIssuer()
+				
+				Возврат Новый Структура("EmployeePosition, EmployeeInfo, OrganizationName, OrganizationBase, 
+										|EmployeeBase, Surname, FirstName, Patronymic");
+				
+			КонецФункции
+			
+			Функция Новый_Attorney() Экспорт
+				
+				Content =  Новый Структура("Date, Number, Issuer, IssuerOrganizationName,  IssuerAdditionalInfo, Recipient, RecipientAdditionalInfo");
+				Content.Issuer    = Новый_Official();
+				Content.Recipient = Новый_Official();
+				
+				Возврат Content;
+				
+			КонецФункции
+	
+		//} ответственные, подписи
+
+		//{ итоги
+	
+			Функция Новый_Torg12Commons()
+				
+				Возврат Новый Структура("TotalGrossQuantity, TotalGrossQuantityInWords, TotalParcelsQuantity, 
+										|TotalParcelsQuantityInWords, TotalQuantity, TotalQuantityInWords, 
+										|TotalSum, TotalSumInWords");
+				
+			КонецФункции
+			
+			Функция Новый_Torg12Totals()
+				
+				Возврат Новый Структура("GrossQuantity, Quantity, ParcelsQuantity, TotalWithVatExcluded, Total, Vat");
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceTotals()
+				
+				Возврат Новый Структура("TotalWithVatExcluded, Total, Vat");
+				
+			КонецФункции
+			
+			Функция Новый_InvoiceTotalsDiff()
+				
+				Возврат Новый Структура("TotalWithVatExcluded, Vat, Total");
+				
+			КонецФункции
+
+			Функция Новый_AmountsDiff()  Экспорт 
+				
+				Возврат Новый Структура("Excise, TotalWithVatExcluded, Vat, Total");
+				
+			конецФункции	
+			
+			Функция Новый_InvoiceItemFields() Экспорт 
+				
+				Возврат Новый Структура("Excise, TotalWithVatExcluded, Vat, Total, Quantity, Price, 
+										|UnitCode, ЕдиницаИзмеренияСсылка, Taxrate");
+				
+			конецФункции	
+	
+		//} итоги
+	
+		//} ИНИЦАЛИЗАЦИЯ content
+		////////////////////////////////////////////////////////////////////////////////
+		
+	//} Get content
+	////////////////////////////////////////////////////////////////////////////////
+	
+//} РАБОТА С КОНТЕНТОМ
+////////////////////////////////////////////////////////////////////////////////
+
+
+//}
 
 //**************************************
 //{	МЕТОДЫ ДЛЯ ЗАПОЛНЕНИЯ КОНТЕНТА
