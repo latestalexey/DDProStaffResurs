@@ -23,6 +23,8 @@
 			<DefaultForm/>
 			<AuxiliaryForm/>
 		</Properties>
-		<ChildObjects/>
+		<ChildObjects>
+			<Template>ТиповойМодульДиадокУФ_epf</Template>
+		</ChildObjects>
 	</ExternalDataProcessor>
 </MetaDataObject>
